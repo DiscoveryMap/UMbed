@@ -10,9 +10,9 @@
  * Example:
  *
  * <script>
- *   (function (u,m,b,e,d) { i[c]=i[c]||function(){(i[c].e=i[c].e||[]).push(arguments)};
- *   v=d.getElementsByTagName(s)[0]; e=d.createElement(s); e.src=o; e.async=0; v.parentNode.insertBefore(e,v);
- *   })(document,window,'script','UMbed','https://discoverymap.com/assets/webmap_embed.js');
+ *   (function (u,m,b,e,d,j,s) { m[e]=m[e]||function(){(m[e].s=m[e].s||[]).push(arguments)};
+ *   j=u.getElementsByTagName(b)[0]; s=u.createElement(b); s.src=d; s.async=0; j.parentNode.insertBefore(s,j);
+ *   })(document,window,'script','UMbed','https://example.com/path/to/umbed.js');
  *   UMbed({
  *     container_id: 'umbed_target',
  *     container_css: "width: 50%; height: 50%;",
