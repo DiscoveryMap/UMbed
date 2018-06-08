@@ -37,7 +37,8 @@ _TBD_
 
 ## Resources
 
-_TBD_
+* https://github.com/browserify/browserify/issues/790#issuecomment-46636501
+* http://requirejs.org/docs/errors.html#mismatch
 
 ## Copyright & Support
 
