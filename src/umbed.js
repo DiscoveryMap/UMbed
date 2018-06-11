@@ -10,13 +10,13 @@
  * Example:
  *
  * <script>
- *   (function (u,m,b,e,d,j,s) { m[e]=m[e]||function(){(m[e].s=m[e].s||[]).push(arguments)};
- *   j=u.getElementsByTagName(b)[0]; s=u.createElement(b); s.src=d; s.async=0; j.parentNode.insertBefore(s,j);
+ *   (function(u,m,b,e,d,j,s){m[e]=m[e]||function(){(m[e].q=m[e].q||[]).push(arguments)};
+ *   j=u.getElementsByTagName(b)[0];s=u.createElement(b);s.src=d;s.async=1;s.defer=1;j.parentNode.insertBefore(s,j);
  *   })(document,window,'script','UMbed','https://example.com/path/to/umbed.js');
  *   UMbed({
  *     container_id: 'umbed_target',
  *     container_css: "width: 50%; height: 50%;",
- *     init: function (something) {
+ *     init: function () {
  *       // some code
  *     }
  *   });
@@ -48,14 +48,14 @@
  */
 
 (function (root) {
-  if ((root.UMbed === undefined) || ((typeof root.UMbed === 'function') && (root.UMbed.e !== undefined))) {
+  if ((root.UMbed === undefined) || ((typeof root.UMbed === 'function') && (root.UMbed.q !== undefined))) {
     /*
      * if the embed code injected a placeholder function to queue UMbed() calls, save any
      * queued UMbed calls for processing after creating the real function
      */
     var queued;
-    if ((typeof root.UMbed === 'function') && (root.UMbed.e !== undefined) && Array.isArray(root.UMbed.e) && (root.UMbed.e.length > 0)) {
-      queued = root.UMbed.e;
+    if ((typeof root.UMbed === 'function') && (root.UMbed.q !== undefined) && Array.isArray(root.UMbed.q) && (root.UMbed.q.length > 0)) {
+      queued = root.UMbed.q;
     }
 
     root.UMbed = function (options) {
@@ -65,8 +65,7 @@
        * 'js'  - Array of JavaScript files that comprise this requirement and should be loaded (optional; if no 'mod' attribute is specified, will always load as normal JS script)
        * 'css' - Array of CSS files for this requirement and should be loaded (optional)
        */
-      var _dependencies = [
-      ];
+      var _dependencies = [];
 
       // AMD (RequireJS, et al)
       if ((typeof define === 'function') && define.amd) {
@@ -103,7 +102,7 @@
 
         // look for our target element
         var embed = root.document.getElementById(options.container_id);
-        if ((embed === undefined) || (embed === null))
+        if ((embed === undefined) || (embed === null)) {
           console.log("ERROR! UMbed() couldn't find element to attach to! Unable to proceed.");
           return;
         }
