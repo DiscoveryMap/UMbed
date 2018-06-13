@@ -161,19 +161,20 @@
       function _includeDependencies(noJSModules) {
         noJSModules = (typeof noJSModules === undefined) ? false : noJSModules;
         var includes = root.document.createDocumentFragment();
+        var promises = [];
 
         _dependencies.forEach(function (d) {
           // include dependency's CSS file(s), unless already included
           if ((d.css !== undefined) && Array.isArray(d.css)) {
-            d.css.forEach(function (url) {
+            promises.push(d.css.map(function (url) {
               var versionedURL = _versionedURL(url, d.vers);
               if (_includesCSS(versionedURL)) {
                 console.log("WARNING! CSS file '" + versionedURL + "' is already included! Will not include it for this UMbed dependency.");
               } else {
                 console.log("Note: Inserting CSS file '" + versionedURL + "' LINK element.");
-                _includeCSS(versionedURL, includes);
+                return _includeCSS(versionedURL, includes);
               }
-            });
+            }));
           }
 
           // include dependency's JS file(s), unless global already exists or JS file is already included
@@ -181,7 +182,7 @@
           if ((d.obj !== undefined) && (_nestedProperty(root, d.obj) !== undefined)) {
             console.log("WARNING! Global variable '" + d.obj + "' already exists! Will not include JS for this UMbed dependency.");
           } else if ((d.js !== undefined) && Array.isArray(d.js)) {
-            d.js.forEach(function (url) {
+            promises.push(d.js.map(function (url) {
               var versionedURL = _versionedURL(url, d.vers);
               if (_includesJS(versionedURL)) {
                 console.log("ERROR! JS file '" + versionedURL + "' is already included! Will not include it for this UMbed dependency.");
@@ -189,15 +190,21 @@
                 console.log("Note: JS file '" + versionedURL + "' is specified to be loaded as a module as opposed to a SCRIPT element. Skipping SCRIPT element creation.");
               } else {
                 console.log("Note: Inserting JS file '" + versionedURL + "' SCRIPT element.");
-                _includeJS(versionedURL, includes);
+                return _includeJS(versionedURL, includes);
               }
-            });
+            }));
           }
         });
 
         // inject all dependencies' elements into HEAD at once, because performance/efficiency
         if (includes.children.length > 0) {
+          console.log("Note: UMbed inserting " + includes.children.length + " element(s) into document HEAD.");
           root.document.getElementsByTagName('head')[0].appendChild(includes);
+          Promise.all(promises).then(function() {
+            console.log("Note: All UMbed injected CSS/JS files loaded successfully.");
+          });
+        } else {
+          console.log("WARNING! UMBed did not insert any elements into document HEAD.");
         }
       }
 
@@ -259,12 +266,28 @@
         link.media = "screen";
         link.href = path;
         parent.appendChild(link);
+
+        return new Promise(function (resolve, reject) {
+          link.onload = function () {
+            console.log("Note: browser has completed loading UMbed-injected CSS file '" + path + "'.");
+            resolve();
+          };
+        });
       }
 
       function _includeJS(path, parent) {
         var script = root.document.createElement('script');
         script.src = path;
+        script.async = 1;
+        script.defer = 1;
         parent.appendChild(script);
+
+        return new Promise(function (resolve, reject) {
+          script.onload = function () {
+            console.log("Note: browser has completed loading UMbed-injected JS file '" + path + "'.");
+            resolve();
+          };
+        });
       }
 
       function _includesCSS(url) {
