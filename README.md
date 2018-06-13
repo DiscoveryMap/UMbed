@@ -26,6 +26,8 @@ However, if you rely on common JavaScript libraries and/or modules, and need you
     * Take advantage of CDNs & browser caching
     * Reduce the size of your own code base to improve parsing performance
   * Only executes callback code upon completion of loading all prerequisite JavaScript
+    * Relies on module loaders (if any) to guarantee this
+    * Uses Promises if no module loader is available (i.e. browser globals)
   * Supports JavaScript environments with or without module loaders:
     * Browser globals (i.e. no module loader)
     * [AMD](https://github.com/amdjs/amdjs-api/wiki/AMD) (e.g. [RequireJS](http://requirejs.org/))
