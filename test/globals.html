@@ -1,0 +1,48 @@
+<!doctype HTML>
+<html>
+	<head>
+		<title>UMbed.js Browser Globals Test</title>
+		<meta charset="utf-8" />
+		<script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+	</head>
+	<body>
+
+	  <h1>UMbed.js Browser Globals Test</h1>
+
+    <p>This page is not using any JavaScript module loader, so UMbed.js should use browser globals. It should:</p>
+    <ul>
+      <li>Not load the already included jQuery library (because the <code>$</code> global variable is already defined)</li>
+      <li>Load the lodash library (resulting in a <code>_</code> global variable)</li>
+      <li>Call the init() method once all libraries are loaded (requiring both <code>$</code> & <code>_</code> global variables to exist; changing the page background color to red)</li>
+    </ul>
+
+    <div id="umbed_target"></div>
+    <script>
+     (function(u,m,b,e,d,j,s){m[e]=m[e]||function(){(m[e].q=m[e].q||[]).push(arguments)};
+     j=u.getElementsByTagName(b)[0];s=u.createElement(b);s.src=d;s.async=1;s.defer=1;j.parentNode.insertBefore(s,j);
+     })(document,window,'script','UMbed','../src/umbed.js');
+     UMbed({
+       dependencies: [
+         {
+           mod: 'jquery',
+           obj: '$',
+           js: ['https://code.jquery.com/jquery-{vers}.min.js'],
+           vers: '3.3.1'
+         },
+         {
+           mod: 'lodash',
+           obj: '_',
+           js: ['https://cdn.jsdelivr.net/npm/lodash@{vers}/lodash.min.js'],
+           vers: '4.17.10'
+         }
+       ],
+       container_id: 'umbed_target',
+       container_css: "width: 50%; height: 50%; border: 1px solid #000;",
+       init: function () {
+         document.body.style.background = "rgba(255,0,0,0.75)";
+       }
+     });
+   </script>
+
+	</body>
+<html>
