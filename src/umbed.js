@@ -66,6 +66,9 @@
        * 'css' - Array of CSS files for this requirement and should be loaded (optional)
        */
       var _dependencies = [];
+      if ((typeof options === 'object') && (options.dependencies)) {
+        _pushDependencies(options.dependencies);
+      }
 
       // AMD (RequireJS, et al)
       if ((typeof define === 'function') && define.amd) {
@@ -141,6 +144,19 @@
       }
 
       // Loader Helper Functions
+
+      function _pushDependencies(dependencies) {
+        if ((dependencies === undefined) || !Array.isArray(dependencies)) {
+          return;
+        }
+        dependencies.forEach(function (d) {
+          if ((typeof d !== 'object') || (Object.keys(['js', 'css']) < 1)) {
+            console.log("WARNING! UMbed() couldn't add a dependency as it had neither 'js' or 'css' key!");
+            return;
+          }
+          _dependencies.push(d);
+        });
+      }
 
       function _includeDependencies(noJSModules) {
         noJSModules = (typeof noJSModules === undefined) ? false : noJSModules;
@@ -238,7 +254,6 @@
       }
 
       function _includeCSS(path, parent) {
-        // build the CSS include tag
         var link = root.document.createElement('link');
         link.rel = "stylesheet";
         link.media = "screen";
