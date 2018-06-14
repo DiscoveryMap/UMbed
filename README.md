@@ -33,6 +33,14 @@ However, if you rely on common JavaScript libraries and/or modules, and need you
     * [AMD](https://github.com/amdjs/amdjs-api/wiki/AMD) (e.g. [RequireJS](http://requirejs.org/))
     * [CommonJS](http://wiki.commonjs.org/wiki/CommonJS)-like (i.e. [Node.js](https://nodejs.org/api/modules.html))
 
+## Download & Changelog
+
+**Note:** _While forked from production code, this software is currently in pre-release (hence the `0.x` version numbers) and should be thoroughly tested before using._
+
+Please download the latest version from the [releases](releases/) page.
+
+Feel free to peruse the [CHANGELOG](CHANGELOG.md), if you're into that sort of thing.
+
 ## How to Get Started
 
 _TBD_
