@@ -59,6 +59,9 @@
     }
 
     root.UMbed = function (options) {
+      var self = this;
+      var _selfName = _currentFn();
+
       /* Dependencies Format:
        * 'mod' - UMD (AMD/CommonJS) module name for this requirement (optional)
        * 'obj' - Global JavaScript variable expected to be instantiated by this requirement, showing that it is loaded & ready (optional)
@@ -66,9 +69,13 @@
        * 'css' - Array of CSS files for this requirement and should be loaded (optional)
        */
       var _dependencies = [];
-      if ((typeof options === 'object') && (options.dependencies)) {
+      if ((typeof options === 'object') && options.dependencies) {
         _pushDependencies(options.dependencies);
       }
+
+      // Logging
+      var _logLevel;
+      _initLogging(options);
 
       // AMD (RequireJS, et al)
       if ((typeof define === 'function') && define.amd) {
@@ -99,14 +106,14 @@
 
         // container_id is required
         if (!options.container_id) {
-          console.log("ERROR! UMbed() requires a valid container_id! Unable to proceed.");
+          _error(null, "'requires a valid container_id! Unable to proceed.");
           return;
         }
 
         // look for our target element
         var embed = root.document.getElementById(options.container_id);
         if ((embed === undefined) || (embed === null)) {
-          console.log("ERROR! UMbed() couldn't find element to attach to! Unable to proceed.");
+          _error(null, "couldn't find element to attach to! Unable to proceed.");
           return;
         }
 
@@ -119,26 +126,26 @@
           } else if (typeof options.container_css === 'string') {
             embed.style = options.container_css;
           } else {
-            console.log("ERROR! Invalid container_css value for UMbed()!");
+            _error(null, "invalid container_css value!");
           }
         }
 
         // ensure all required variables are available
         if (!_dependencies.every(function (d) {
           if ((d.obj !== undefined) && (_nestedProperty(root, d.obj) === undefined)) {
-            console.log("ERROR! UMbed() couldn't find required variable 'window." + d.obj + "'!");
+            _error(null, "couldn't find required variable 'window." + d.obj + "'!");
               return false;
             } else {
               return true;
             }
           })) {
-            console.log("ERROR! UMbed() can't find one or more required objects! Cannot proceed.");
+            _error(null, "can't find one or more required objects! Cannot proceed.");
             return;
         }
 
         // run any provided initialization callback
         if (typeof options.init === 'function') {
-          console.log("UMbed() calling init...");
+          _info(null, "UMbed() calling init...");
           options.init();
         }
       }
@@ -151,7 +158,7 @@
         }
         dependencies.forEach(function (d) {
           if ((typeof d !== 'object') || (Object.keys(['js', 'css']) < 1)) {
-            console.log("WARNING! UMbed() couldn't add a dependency as it had neither 'js' or 'css' key!");
+            _warn(_currentFn(), "couldn't add a dependency as it had neither 'js' or 'css' key!");
             return;
           }
           _dependencies.push(d);
@@ -169,9 +176,9 @@
             promises.push(d.css.map(function (url) {
               var versionedURL = _versionedURL(url, d.vers);
               if (_includesCSS(versionedURL)) {
-                console.log("WARNING! CSS file '" + versionedURL + "' is already included! Will not include it for this UMbed dependency.");
+                _warn(_currentFn(), "CSS file '" + versionedURL + "' is already included! Will not include it for this dependency.");
               } else {
-                console.log("Note: Inserting CSS file '" + versionedURL + "' LINK element.");
+                _info(_currentFn(), "Inserting CSS file '" + versionedURL + "' LINK element.");
                 return _includeCSS(versionedURL, includes);
               }
             }));
@@ -180,16 +187,16 @@
           // include dependency's JS file(s), unless global already exists or JS file is already included
           // does the global variable already exist?
           if ((d.obj !== undefined) && (_nestedProperty(root, d.obj) !== undefined)) {
-            console.log("WARNING! Global variable '" + d.obj + "' already exists! Will not include JS for this UMbed dependency.");
+            _warn(_currentFn(), "global variable '" + d.obj + "' already exists! Will not include JS for this dependency.");
           } else if ((d.js !== undefined) && Array.isArray(d.js)) {
             promises.push(d.js.map(function (url) {
               var versionedURL = _versionedURL(url, d.vers);
               if (_includesJS(versionedURL)) {
-                console.log("ERROR! JS file '" + versionedURL + "' is already included! Will not include it for this UMbed dependency.");
+                _error(_currentFn(), "JS file '" + versionedURL + "' is already included! Will not include it for this dependency.");
               } else if ((d.mod !== undefined) && noJSModules) {
-                console.log("Note: JS file '" + versionedURL + "' is specified to be loaded as a module as opposed to a SCRIPT element. Skipping SCRIPT element creation.");
+                _info(_currentFn(), "JS file '" + versionedURL + "' is specified to be loaded as a module as opposed to a SCRIPT element. Skipping SCRIPT element creation.");
               } else {
-                console.log("Note: Inserting JS file '" + versionedURL + "' SCRIPT element.");
+                _info(_currentFn(), "inserting JS file '" + versionedURL + "' SCRIPT element.");
                 return _includeJS(versionedURL, includes);
               }
             }));
@@ -198,13 +205,13 @@
 
         // inject all dependencies' elements into HEAD at once, because performance/efficiency
         if (includes.children.length > 0) {
-          console.log("Note: UMbed inserting " + includes.children.length + " element(s) into document HEAD.");
+          _info(_currentFn(), "inserting " + includes.children.length + " element(s) into document HEAD.");
           root.document.getElementsByTagName('head')[0].appendChild(includes);
           Promise.all(promises).then(function() {
-            console.log("Note: All UMbed injected CSS/JS files loaded successfully.");
+            _info(_currentFn(), "all injected CSS/JS files loaded successfully.");
           });
         } else {
-          console.log("WARNING! UMBed did not insert any elements into document HEAD.");
+          _warn(_currentFn(), "did not insert any elements into document HEAD.");
         }
       }
 
@@ -214,12 +221,12 @@
         var shims = {};
         _dependencies.forEach(function (d) {
           if ((d.mod !== undefined) && (d.js !== undefined) && Array.isArray(d.js)) {
-            console.log("UMbed AMD loader: preparing dependency for '" + d.mod + "' module...");
+            _info(_currentFn(), "preparing dependency for '" + d.mod + "' module...");
             deps.push(d.mod);
             config.paths[d.mod] = [];
             d.js.forEach(function (url) {
               var path = _pathForURL(_versionedURL(url, d.vers), 'js');
-              console.log("UMbed AMD loader: Adding '" + d.mod + "' module config path: '" + path + "'");
+              _info(_currentFn(), "adding '" + d.mod + "' module config path: '" + path + "'");
               config.paths[d.mod].push(path);
             });
             if ((d.shim !== undefined) && (d.shim == true) && (d.obj !== undefined)) {
@@ -239,7 +246,7 @@
         var i = 0;
         _dependencies.forEach(function (d) {
           if ((d.mod !== undefined) && (d.js !== undefined) && Array.isArray(d.js) && (d.obj !== undefined) && (i < args.length)) {
-            console.log("UMbed AMD loader: setting global variable '" + d.obj + "' for '" + d.mod + "' module...");
+            _info(_currentFn(), "setting global variable '" + d.obj + "' for '" + d.mod + "' module...");
             root[d.obj] = args[i];
             i++;
           }
@@ -269,7 +276,7 @@
 
         return new Promise(function (resolve, reject) {
           link.onload = function () {
-            console.log("Note: browser has completed loading UMbed-injected CSS file '" + path + "'.");
+            _info(_currentFn(), "browser has completed loading injected CSS file '" + path + "'.");
             resolve();
           };
         });
@@ -284,7 +291,7 @@
 
         return new Promise(function (resolve, reject) {
           script.onload = function () {
-            console.log("Note: browser has completed loading UMbed-injected JS file '" + path + "'.");
+            _info(_currentFn(), "browser has completed loading injected JS file '" + path + "'.");
             resolve();
           };
         });
@@ -328,6 +335,96 @@
         if (obj === undefined) { return; }
         var pos = prop.indexOf('.');
         return (pos < 0) ? obj[prop] : _nestedProperty(obj[prop.substring(0, pos)], prop.substring(pos + 1));
+      }
+
+      function _functionName(fn) {
+        if ((typeof fn === undefined) || (typeof fn === null)) { return; }
+        if (func.name) {
+          return func.name;
+        } else {
+          var result = /^function\s+([\w\$]+)\s*\(/.exec(fn.toString());
+          return result ? result[1] : 'anonymous';
+        }
+      }
+
+      function _currentFn() {
+        try {
+          return _functionName(arguments.caller);
+        } catch(e) {
+          var s = new Error().stack.split('\n');
+          var m = /(^[^@]+)@/.exec(s[1]);
+          return ((s.length > 1) && m && (m.length > 1)) ? m[1] : '';
+        }
+      }
+
+      function _initLogging(options) {
+        // Log levels: 'debug', 'info', 'warn', 'error', 'none'
+        options = extend({
+          log_level: 'warn',
+        }, options);
+        _logLevel = options.log_level;
+      }
+
+      function _logLevelToInt(name) {
+        switch (name) {
+          case 'debug':
+            return 0;
+            break;
+          case 'info':
+            return 1;
+            break;
+          case 'warn':
+            return 2;
+            break;
+          case 'error':
+            return 3;
+            break;
+          case 'none':
+            return 4;
+            break;
+          default:
+            return undefined;
+        }
+      }
+
+      function _logLevelToString(name) {
+        switch (name) {
+          case 'debug':
+            return 'DEBUG';
+            break;
+          case 'info':
+            return 'INFO';
+            break;
+          case 'warn':
+            return 'WARNING';
+            break;
+          case 'error':
+            return 'ERROR';
+            break;
+          default:
+            return '';
+        }
+      }
+
+      function _log(level, fn, message) {
+        if ((level === undefined) || (_logLevelToInt(_logLevel) > _logLevelToInt(level))) { return; }
+        console.log(_selfName + ' ' + _logLevelToString(level) + (fn ? (' in ' + fn + '()') : '') + ': ' + message);
+      }
+
+      function _debug(func, message) {
+        _log('debug', func, message);
+      }
+
+      function _info(func, message) {
+        _log('info', func, message);
+      }
+
+      function _warn(func, message) {
+        _log('warn', func, message);
+      }
+
+      function _error(func, message) {
+        _log('error', func, message);
       }
 
       // Misc Helper Functions
