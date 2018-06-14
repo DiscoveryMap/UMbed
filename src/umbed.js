@@ -106,14 +106,14 @@
 
         // container_id is required
         if (!options.container_id) {
-          _error(null, "'requires a valid container_id! Unable to proceed.");
+          _error(_currentFn(), "'requires a valid container_id! Unable to proceed.");
           return;
         }
 
         // look for our target element
         var embed = root.document.getElementById(options.container_id);
         if ((embed === undefined) || (embed === null)) {
-          _error(null, "couldn't find element to attach to! Unable to proceed.");
+          _error(_currentFn(), "couldn't find element to attach to! Unable to proceed.");
           return;
         }
 
@@ -126,26 +126,26 @@
           } else if (typeof options.container_css === 'string') {
             embed.style = options.container_css;
           } else {
-            _error(null, "invalid container_css value!");
+            _error(_currentFn(), "invalid container_css value!");
           }
         }
 
         // ensure all required variables are available
         if (!_dependencies.every(function (d) {
           if ((d.obj !== undefined) && (_nestedProperty(root, d.obj) === undefined)) {
-            _error(null, "couldn't find required variable 'window." + d.obj + "'!");
+              _error(_currentFn(), "couldn't find required variable 'window." + d.obj + "'!");
               return false;
             } else {
               return true;
             }
           })) {
-            _error(null, "can't find one or more required objects! Cannot proceed.");
+            _error(_currentFn(), "can't find one or more required objects! Cannot proceed.");
             return;
         }
 
         // run any provided initialization callback
         if (typeof options.init === 'function') {
-          _info(null, "UMbed() calling init...");
+          _info(_currentFn(), "calling init() callback...");
           options.init();
         }
       }
