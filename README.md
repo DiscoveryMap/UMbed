@@ -27,7 +27,7 @@ However, if you rely on common JavaScript libraries and/or modules, and need you
     * Reduce the size of your own code base to improve parsing performance
   * Only executes callback code upon completion of loading all prerequisite JavaScript
     * Relies on module loaders (if any) to guarantee this
-    * Uses Promises if no module loader is available (i.e. browser globals)
+    * Uses [Promises](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise) if no module loader is available (i.e. browser globals)
   * Supports JavaScript environments with or without module loaders:
     * Browser globals (i.e. no module loader)
     * [AMD](https://github.com/amdjs/amdjs-api/wiki/AMD) (e.g. [RequireJS](http://requirejs.org/))
@@ -41,6 +41,8 @@ _TBD_
 
 * https://github.com/browserify/browserify/issues/790#issuecomment-46636501
 * http://requirejs.org/docs/errors.html#mismatch
+* https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise
+* https://pouchdb.com/2015/05/18/we-have-a-problem-with-promises.html
 
 ## Copyright & Support
 
