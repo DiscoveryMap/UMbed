@@ -79,21 +79,24 @@
 
       // AMD (RequireJS, et al)
       if ((typeof define === 'function') && define.amd) {
-        _includeDependencies(true);
-        require(_amdDependencies(), function () {
-          _amdSetGlobals(arguments);
-          _inject(options);
+        _includeDependencies(true).then(function () {
+          require(_amdDependencies(), function () {
+            _amdSetGlobals(arguments);
+            _inject(options);
+          });
         });
       // CommonJS-like (Node, et al)
       } else if ((typeof module === 'object') && module.exports) {
-        _includeDependencies(true);
-        _requireDependencies();
-        _inject(options);
+        _includeDependencies(true).then(function () {
+          _requireDependencies();
+          _inject(options);
+        });
       // Browser globals
       } else {
-        _includeDependencies();
-        root.addEventListener("load", function(e) {
-          _inject(options);
+        _includeDependencies().then(function () {
+          root.addEventListener("load", function(e) {
+            _inject(options);
+          });
         });
       }
 
@@ -207,11 +210,14 @@
         if (includes.children.length > 0) {
           _info(_currentFn(), "inserting " + includes.children.length + " element(s) into document HEAD.");
           root.document.getElementsByTagName('head')[0].appendChild(includes);
-          Promise.all(promises).then(function() {
+          return Promise.all(promises).then(function() {
             _info(_currentFn(), "all injected CSS/JS files loaded successfully.");
+          }, function (err) {
+            _error(_currentFn(), "one or more injected CSS/JS filed failed to load!");
           });
         } else {
           _warn(_currentFn(), "did not insert any elements into document HEAD.");
+          return Promise.resolve();
         }
       }
 
