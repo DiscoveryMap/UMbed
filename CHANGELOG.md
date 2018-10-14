@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.3] - 2018-10-13
+### Changed
+- Additional fix for issue where `init()` callback could potentially execute before all
+  prerequisite CSS & JS files had completely loaded (esp. when including JS as browser
+  globals) by resolving all promises prior to calling `_inject()`.
+
 ## [0.0.2] - 2018-06-14
 ### Added
 - Internal `_log()` method for consistent logging (incl. calling function), plus internal
@@ -31,4 +37,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   DMIWebMapEmbed.js (by permission)
 
 [Unreleased]: compare/0.0.2...HEAD
+[0.0.3]: compare/0.0.2...0.0.3
 [0.0.2]: compare/0.0.1...0.0.2
