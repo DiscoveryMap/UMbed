@@ -1,0 +1,27 @@
+{
+  "name": "umbed",
+  "version": "0.0.3",
+  "description": "Universal embedding (U-M-BED) of JavaScript code in third party sites.",
+  "main": "src/umbed.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/discoverymap/UMbed.git"
+  },
+  "author": "Discovery Map International",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/discoverymap/UMbed/issues"
+  },
+  "homepage": "https://github.com/discoverymap/UMbed#readme",
+  "devDependencies": {
+    "grunt": "^1.0.3",
+    "grunt-contrib-jshint": "^2.0.0",
+    "grunt-contrib-watch": "^1.1.0"
+  }
+}
