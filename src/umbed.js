@@ -125,7 +125,12 @@
 
       self.log = function (level, message, fn) {
         if ((level === undefined) || (_logLevelToInt(self._level) > _logLevelToInt(level))) { return; }
-        console.log((self._context ? (self._context + ' ') : '') + _logLevelToString(level) + (fn ? (' in ' + fn + '()') : '') + ': ' + message);
+        var out = (self._context ? (self._context + ' ') : '') + _logLevelToString(level) + (fn ? (' in ' + fn + '()') : '') + ': ' + message;
+        if (console[level] && (typeof console[level] === 'function')) {
+          console[level](out);
+        } else {
+          console.log(out);
+        }
       };
 
       self.debug = function (message, fn) {
