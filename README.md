@@ -51,6 +51,7 @@ _TBD_
 * http://requirejs.org/docs/errors.html#mismatch
 * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise
 * https://pouchdb.com/2015/05/18/we-have-a-problem-with-promises.html
+* https://flaviocopes.com/javascript-async-defer/
 
 ## Copyright & Support
 
