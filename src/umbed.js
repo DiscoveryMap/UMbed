@@ -58,7 +58,7 @@
       queued = root.UMbed.q;
     }
 
-    var Log = function () {
+    var Log = function (options) {
       var self = this;
 
       function _functionName(fn) {
@@ -110,7 +110,7 @@
           log_context: ""
         }, options);
         self._level = options.log_level;
-        self._context = options.context;
+        self._context = options.log_context;
       };
 
       self.fn = function () {
@@ -149,11 +149,33 @@
         self.log('error', message, fn);
       };
 
+      self.startTimer = function (label) {
+        if (self._level == 'debug') {
+          console.time(label);
+        }
+      };
+
+      self.stopTimer = function (label) {
+        if (self._level == 'debug') {
+          console.timeEnd(label);
+        }
+      };
+
+      self.init(options);
+
       return self;
     };
 
     root.UMbed = function (options) {
       var self = this;
+
+      // Logging
+      if ((typeof options === 'object') && !options.log_context) {
+        options.log_context = "UMbed";
+      }
+      var _log = new Log(options);
+
+      _log.startTimer(options.log_context);
 
       /* Dependencies Format:
        * 'mod' - UMD (AMD/CommonJS) module name for this requirement (optional)
@@ -165,13 +187,6 @@
       if ((typeof options === 'object') && options.dependencies) {
         _pushDependencies(options.dependencies);
       }
-
-      // Logging
-      var _log = new Log();
-      if ((typeof options === 'object') && !options.log_context) {
-        options.log_context = _log.fn();
-      }
-      _log.init(options);
 
       // AMD (RequireJS, et al)
       if ((typeof define === 'function') && define.amd) {
@@ -438,6 +453,8 @@
         var pos = prop.indexOf('.');
         return (pos < 0) ? obj[prop] : _nestedProperty(obj[prop.substring(0, pos)], prop.substring(pos + 1));
       }
+
+      _log.stopTimer(options.log_context);
     };
 
     // Execute any queued calls to UMbed()
