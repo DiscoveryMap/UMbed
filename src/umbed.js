@@ -58,9 +58,97 @@
       queued = root.UMbed.q;
     }
 
+    var Log = function () {
+      var self = this;
+
+      function _functionName(fn) {
+        if ((typeof fn === undefined) || (typeof fn === null)) { return; }
+        if (func.name) {
+          return func.name;
+        } else {
+          var result = /^function\s+([\w\$]+)\s*\(/.exec(fn.toString());
+          return result ? result[1] : 'anonymous';
+        }
+      }
+
+      function _logLevelToInt(name) {
+        switch (name) {
+          case 'debug':
+            return 0;
+          case 'info':
+            return 1;
+          case 'warn':
+            return 2;
+          case 'error':
+            return 3;
+          case 'none':
+            return 4;
+          default:
+            return undefined;
+        }
+      }
+
+      function _logLevelToString(name) {
+        switch (name) {
+          case 'debug':
+            return 'DEBUG';
+          case 'info':
+            return 'INFO';
+          case 'warn':
+            return 'WARNING';
+          case 'error':
+            return 'ERROR';
+          default:
+            return '';
+        }
+      }
+
+      self.init = function (options) {
+        // Log levels: 'debug', 'info', 'warn', 'error', 'none'
+        options = extend({
+          log_level: "warn",
+          log_context: ""
+        }, options);
+        self._level = options.log_level;
+        self._context = options.context;
+      };
+
+      self.fn = function () {
+        try {
+          return _functionName(arguments.caller);
+        } catch(e) {
+          var s = new Error().stack.split('\n');
+          var m = /(^[^@]+)@/.exec(s[1]);
+          return ((s.length > 1) && m && (m.length > 1)) ? m[1] : '';
+        }
+      };
+
+      self.log = function (level, message, fn) {
+        if ((level === undefined) || (_logLevelToInt(self._level) > _logLevelToInt(level))) { return; }
+        console.log((self._context ? (self._context + ' ') : '') + _logLevelToString(level) + (fn ? (' in ' + fn + '()') : '') + ': ' + message);
+      };
+
+      self.debug = function (message, fn) {
+        self.log('debug', message, fn);
+      };
+
+      self.info = function (message, fn) {
+        self.log('info', message, fn);
+      };
+
+      self.warn = function (message, fn) {
+        self.log('warn', message, fn);
+      };
+
+      self.error = function (message, fn) {
+        self.log('error', message, fn);
+      };
+
+      return self;
+    };
+
     root.UMbed = function (options) {
       var self = this;
-      var _selfName = _currentFn();
 
       /* Dependencies Format:
        * 'mod' - UMD (AMD/CommonJS) module name for this requirement (optional)
@@ -74,8 +162,11 @@
       }
 
       // Logging
-      var _logLevel;
-      _initLogging(options);
+      var _log = new Log();
+      if ((typeof options === 'object') && !options.log_context) {
+        options.log_context = _log.fn();
+      }
+      _log.init(options);
 
       // AMD (RequireJS, et al)
       if ((typeof define === 'function') && define.amd) {
@@ -109,14 +200,14 @@
 
         // container_id is required
         if (!options.container_id) {
-          _error(_currentFn(), "'requires a valid container_id! Unable to proceed.");
+          _log.error("'requires a valid container_id! Unable to proceed.", _log.fn());
           return;
         }
 
         // look for our target element
         var embed = root.document.getElementById(options.container_id);
         if ((embed === undefined) || (embed === null)) {
-          _error(_currentFn(), "couldn't find element to attach to! Unable to proceed.");
+          _log.error("couldn't find element to attach to! Unable to proceed.", _log.fn());
           return;
         }
 
@@ -129,26 +220,26 @@
           } else if (typeof options.container_css === 'string') {
             embed.style = options.container_css;
           } else {
-            _error(_currentFn(), "invalid container_css value!");
+            _log.error("invalid container_css value!", _log.fn());
           }
         }
 
         // ensure all required variables are available
         if (!_dependencies.every(function (d) {
           if ((d.obj !== undefined) && (_nestedProperty(root, d.obj) === undefined)) {
-              _error(_currentFn(), "couldn't find required variable 'window." + d.obj + "'!");
+              _log.error("couldn't find required variable 'window." + d.obj + "'!", _log.fn());
               return false;
             } else {
               return true;
             }
           })) {
-            _error(_currentFn(), "can't find one or more required objects! Cannot proceed.");
+            _log.error("can't find one or more required objects! Cannot proceed.", _log.fn());
             return;
         }
 
         // run any provided initialization callback
         if (typeof options.init === 'function') {
-          _info(_currentFn(), "calling init() callback...");
+          _log.info("calling init() callback...", _log.fn());
           options.init();
         }
       }
@@ -161,7 +252,7 @@
         }
         dependencies.forEach(function (d) {
           if ((typeof d !== 'object') || (Object.keys(['js', 'css']) < 1)) {
-            _warn(_currentFn(), "couldn't add a dependency as it had neither 'js' or 'css' key!");
+            _log.warn("couldn't add a dependency as it had neither 'js' or 'css' key!", _log.fn());
             return;
           }
           _dependencies.push(d);
@@ -179,9 +270,9 @@
             promises.push(d.css.map(function (url) {
               var versionedURL = _versionedURL(url, d.vers);
               if (_includesCSS(versionedURL)) {
-                _warn(_currentFn(), "CSS file '" + versionedURL + "' is already included! Will not include it for this dependency.");
+                _log.warn("CSS file '" + versionedURL + "' is already included! Will not include it for this dependency.", _log.fn());
               } else {
-                _info(_currentFn(), "Inserting CSS file '" + versionedURL + "' LINK element.");
+                _log.info("Inserting CSS file '" + versionedURL + "' LINK element.", _log.fn());
                 return _includeCSS(versionedURL, includes);
               }
             }));
@@ -190,16 +281,16 @@
           // include dependency's JS file(s), unless global already exists or JS file is already included
           // does the global variable already exist?
           if ((d.obj !== undefined) && (_nestedProperty(root, d.obj) !== undefined)) {
-            _warn(_currentFn(), "global variable '" + d.obj + "' already exists! Will not include JS for this dependency.");
+            _log.warn("global variable '" + d.obj + "' already exists! Will not include JS for this dependency.", _log.fn());
           } else if ((d.js !== undefined) && Array.isArray(d.js)) {
             promises.push(d.js.map(function (url) {
               var versionedURL = _versionedURL(url, d.vers);
               if (_includesJS(versionedURL)) {
-                _error(_currentFn(), "JS file '" + versionedURL + "' is already included! Will not include it for this dependency.");
+                _log.error("JS file '" + versionedURL + "' is already included! Will not include it for this dependency.", _log.fn());
               } else if ((d.mod !== undefined) && noJSModules) {
-                _info(_currentFn(), "JS file '" + versionedURL + "' is specified to be loaded as a module as opposed to a SCRIPT element. Skipping SCRIPT element creation.");
+                _log.info("JS file '" + versionedURL + "' is specified to be loaded as a module as opposed to a SCRIPT element. Skipping SCRIPT element creation.", _log.fn());
               } else {
-                _info(_currentFn(), "inserting JS file '" + versionedURL + "' SCRIPT element.");
+                _log.info("inserting JS file '" + versionedURL + "' SCRIPT element.", _log.fn());
                 return _includeJS(versionedURL, includes);
               }
             }));
@@ -208,15 +299,15 @@
 
         // inject all dependencies' elements into HEAD at once, because performance/efficiency
         if (includes.children.length > 0) {
-          _info(_currentFn(), "inserting " + includes.children.length + " element(s) into document HEAD.");
+          _log.info("inserting " + includes.children.length + " element(s) into document HEAD.", _log.fn());
           root.document.getElementsByTagName('head')[0].appendChild(includes);
           return Promise.all(promises).then(function() {
-            _info(_currentFn(), "all injected CSS/JS files loaded successfully.");
+            _log.info("all injected CSS/JS files loaded successfully.", _log.fn());
           }, function (err) {
-            _error(_currentFn(), "one or more injected CSS/JS filed failed to load!");
+            _log.error("one or more injected CSS/JS filed failed to load!", _log.fn());
           });
         } else {
-          _warn(_currentFn(), "did not insert any elements into document HEAD.");
+          _log.warn("did not insert any elements into document HEAD.", _log.fn());
           return Promise.resolve();
         }
       }
@@ -227,12 +318,12 @@
         var shims = {};
         _dependencies.forEach(function (d) {
           if ((d.mod !== undefined) && (d.js !== undefined) && Array.isArray(d.js)) {
-            _info(_currentFn(), "preparing dependency for '" + d.mod + "' module...");
+            _log.info("preparing dependency for '" + d.mod + "' module...", _log.fn());
             deps.push(d.mod);
             config.paths[d.mod] = [];
             d.js.forEach(function (url) {
               var path = _pathForURL(_versionedURL(url, d.vers), 'js');
-              _info(_currentFn(), "adding '" + d.mod + "' module config path: '" + path + "'");
+              _log.info("adding '" + d.mod + "' module config path: '" + path + "'", _log.fn());
               config.paths[d.mod].push(path);
             });
             if ((d.shim !== undefined) && (d.shim == true) && (d.obj !== undefined)) {
@@ -252,7 +343,7 @@
         var i = 0;
         _dependencies.forEach(function (d) {
           if ((d.mod !== undefined) && (d.js !== undefined) && Array.isArray(d.js) && (d.obj !== undefined) && (i < args.length)) {
-            _info(_currentFn(), "setting global variable '" + d.obj + "' for '" + d.mod + "' module...");
+            _log.info("setting global variable '" + d.obj + "' for '" + d.mod + "' module...", _log.fn());
             root[d.obj] = args[i];
             i++;
           }
@@ -282,7 +373,7 @@
 
         return new Promise(function (resolve, reject) {
           link.onload = function () {
-            _info(_currentFn(), "browser has completed loading injected CSS file '" + path + "'.");
+            _log.info("browser has completed loading injected CSS file '" + path + "'.", _log.fn());
             resolve();
           };
         });
@@ -297,7 +388,7 @@
 
         return new Promise(function (resolve, reject) {
           script.onload = function () {
-            _info(_currentFn(), "browser has completed loading injected JS file '" + path + "'.");
+            _log.info("browser has completed loading injected JS file '" + path + "'.", _log.fn());
             resolve();
           };
         });
@@ -342,147 +433,6 @@
         var pos = prop.indexOf('.');
         return (pos < 0) ? obj[prop] : _nestedProperty(obj[prop.substring(0, pos)], prop.substring(pos + 1));
       }
-
-      function _functionName(fn) {
-        if ((typeof fn === undefined) || (typeof fn === null)) { return; }
-        if (func.name) {
-          return func.name;
-        } else {
-          var result = /^function\s+([\w\$]+)\s*\(/.exec(fn.toString());
-          return result ? result[1] : 'anonymous';
-        }
-      }
-
-      function _currentFn() {
-        try {
-          return _functionName(arguments.caller);
-        } catch(e) {
-          var s = new Error().stack.split('\n');
-          var m = /(^[^@]+)@/.exec(s[1]);
-          return ((s.length > 1) && m && (m.length > 1)) ? m[1] : '';
-        }
-      }
-
-      function _initLogging(options) {
-        // Log levels: 'debug', 'info', 'warn', 'error', 'none'
-        options = extend({
-          log_level: 'warn',
-        }, options);
-        _logLevel = options.log_level;
-      }
-
-      function _logLevelToInt(name) {
-        switch (name) {
-          case 'debug':
-            return 0;
-            break;
-          case 'info':
-            return 1;
-            break;
-          case 'warn':
-            return 2;
-            break;
-          case 'error':
-            return 3;
-            break;
-          case 'none':
-            return 4;
-            break;
-          default:
-            return undefined;
-        }
-      }
-
-      function _logLevelToString(name) {
-        switch (name) {
-          case 'debug':
-            return 'DEBUG';
-            break;
-          case 'info':
-            return 'INFO';
-            break;
-          case 'warn':
-            return 'WARNING';
-            break;
-          case 'error':
-            return 'ERROR';
-            break;
-          default:
-            return '';
-        }
-      }
-
-      function _log(level, fn, message) {
-        if ((level === undefined) || (_logLevelToInt(_logLevel) > _logLevelToInt(level))) { return; }
-        console.log(_selfName + ' ' + _logLevelToString(level) + (fn ? (' in ' + fn + '()') : '') + ': ' + message);
-      }
-
-      function _debug(func, message) {
-        _log('debug', func, message);
-      }
-
-      function _info(func, message) {
-        _log('info', func, message);
-      }
-
-      function _warn(func, message) {
-        _log('warn', func, message);
-      }
-
-      function _error(func, message) {
-        _log('error', func, message);
-      }
-
-      // Misc Helper Functions
-
-      /*! extend.js | (c) 2017 Chris Ferdinandi, (c) 2018 Morgan Aldridge | MIT License | http://github.com/morgant/extend */
-      /**
-       * Merge two or more objects together into the first object. Same method signature as jQuery.extend().
-       * @param {Boolean}  deep     If true, do a deep (or recursive) merge [optional]
-       * @param {Object}   target   The target object to be merged into & modified
-       * @param {Object}   objects  The object(s) to merge into the target object
-       * @returns {Object}          Target object with merged values from object(s)
-       */
-      function extend() {
-        var target;
-        var deep = false;
-        var i = 0;
-        var length = arguments.length;
-
-        // Check if a deep merge
-        if ( Object.prototype.toString.call( arguments[0] ) === '[object Boolean]' ) {
-          deep = arguments[0];
-          i++;
-        }
-
-        // Get the target object
-        if ( ( length - i >= 1 ) && ( Object.prototype.toString.call( arguments[i] ) === '[object Object]' ) ) {
-          target = arguments[i];
-          i++;
-        }
-
-        // Merge the object into the extended object
-        var merge = function ( obj ) {
-          for ( var prop in obj ) {
-            if ( Object.prototype.hasOwnProperty.call( obj, prop ) ) {
-              // If deep merge and property is an object, merge properties
-              if ( deep && Object.prototype.toString.call(obj[prop]) === '[object Object]' ) {
-                target[prop] = extend( true, target[prop], obj[prop] );
-              } else {
-                target[prop] = obj[prop];
-              }
-            }
-          }
-        };
-
-        // Loop through each object and conduct a merge
-        for ( ; i < length; i++ ) {
-          var obj = arguments[i];
-          merge(obj);
-        }
-
-        return target;
-      }
     };
 
     // Execute any queued calls to UMbed()
@@ -491,5 +441,56 @@
         UMbed.apply(null, queued.pop());
       };
     }
+  }
+
+  // Misc Helper Functions
+
+  /*! extend.js | (c) 2017 Chris Ferdinandi, (c) 2018 Morgan Aldridge | MIT License | http://github.com/morgant/extend */
+  /**
+   * Merge two or more objects together into the first object. Same method signature as jQuery.extend().
+   * @param {Boolean}  deep     If true, do a deep (or recursive) merge [optional]
+   * @param {Object}   target   The target object to be merged into & modified
+   * @param {Object}   objects  The object(s) to merge into the target object
+   * @returns {Object}          Target object with merged values from object(s)
+   */
+  function extend() {
+    var target;
+    var deep = false;
+    var i = 0;
+    var length = arguments.length;
+
+    // Check if a deep merge
+    if ( Object.prototype.toString.call( arguments[0] ) === '[object Boolean]' ) {
+      deep = arguments[0];
+      i++;
+    }
+
+    // Get the target object
+    if ( ( length - i >= 1 ) && ( Object.prototype.toString.call( arguments[i] ) === '[object Object]' ) ) {
+      target = arguments[i];
+      i++;
+    }
+
+    // Merge the object into the extended object
+    var merge = function ( obj ) {
+      for ( var prop in obj ) {
+        if ( Object.prototype.hasOwnProperty.call( obj, prop ) ) {
+          // If deep merge and property is an object, merge properties
+          if ( deep && Object.prototype.toString.call(obj[prop]) === '[object Object]' ) {
+            target[prop] = extend( true, target[prop], obj[prop] );
+          } else {
+            target[prop] = obj[prop];
+          }
+        }
+      }
+    };
+
+    // Loop through each object and conduct a merge
+    for ( ; i < length; i++ ) {
+      var obj = arguments[i];
+      merge(obj);
+    }
+
+    return target;
   }
 })(typeof self !== 'undefined' ? self : this);
