@@ -62,9 +62,9 @@
       var self = this;
 
       function _functionName(fn) {
-        if ((typeof fn === undefined) || (typeof fn === null)) { return; }
-        if (func.name) {
-          return func.name;
+        if ((fn === undefined) || (fn === null)) { return; }
+        if (fn.name) {
+          return fn.name;
         } else {
           var result = /^function\s+([\w\$]+)\s*\(/.exec(fn.toString());
           return result ? result[1] : 'anonymous';
@@ -115,7 +115,7 @@
 
       self.fn = function () {
         try {
-          return _functionName(arguments.caller);
+          return _functionName(arguments.callee.caller);
         } catch(e) {
           var s = new Error().stack.split('\n');
           var m = /(^[^@]+)@/.exec(s[1]);
@@ -212,6 +212,9 @@
       }
 
       function _inject(options) {
+        var fn = _log.fn();
+        _log.startTimer(fn);
+
         // default options
         options = extend({
           container_id: undefined,
@@ -220,14 +223,14 @@
 
         // container_id is required
         if (!options.container_id) {
-          _log.error("'requires a valid container_id! Unable to proceed.", _log.fn());
+          _log.error("'requires a valid container_id! Unable to proceed.", fn);
           return;
         }
 
         // look for our target element
         var embed = root.document.getElementById(options.container_id);
         if ((embed === undefined) || (embed === null)) {
-          _log.error("couldn't find element to attach to! Unable to proceed.", _log.fn());
+          _log.error("couldn't find element to attach to! Unable to proceed.", fn);
           return;
         }
 
@@ -240,28 +243,31 @@
           } else if (typeof options.container_css === 'string') {
             embed.style = options.container_css;
           } else {
-            _log.error("invalid container_css value!", _log.fn());
+            _log.error("invalid container_css value!", fn);
           }
         }
 
         // ensure all required variables are available
         if (!_dependencies.every(function (d) {
           if ((d.obj !== undefined) && (_nestedProperty(root, d.obj) === undefined)) {
-              _log.error("couldn't find required variable 'window." + d.obj + "'!", _log.fn());
+              _log.error("couldn't find required variable 'window." + d.obj + "'!", fn);
               return false;
             } else {
               return true;
             }
           })) {
-            _log.error("can't find one or more required objects! Cannot proceed.", _log.fn());
-            return;
+          _log.error("can't find one or more required objects! Cannot proceed.", fn);
+          _log.stopTimer(fn);
+          return;
         }
 
         // run any provided initialization callback
         if (typeof options.init === 'function') {
-          _log.info("calling init() callback...", _log.fn());
+          _log.info("calling init() callback...", fn);
           options.init();
         }
+
+        _log.stopTimer(fn);
       }
 
       // Loader Helper Functions
@@ -280,6 +286,9 @@
       }
 
       function _includeDependencies(noJSModules) {
+        var fn = _log.fn();
+        _log.startTimer(fn);
+
         noJSModules = (typeof noJSModules === undefined) ? false : noJSModules;
         var includes = root.document.createDocumentFragment();
         var promises = [];
@@ -290,9 +299,9 @@
             promises.push(d.css.map(function (url) {
               var versionedURL = _versionedURL(url, d.vers);
               if (_includesCSS(versionedURL)) {
-                _log.warn("CSS file '" + versionedURL + "' is already included! Will not include it for this dependency.", _log.fn());
+                _log.warn("CSS file '" + versionedURL + "' is already included! Will not include it for this dependency.", fn);
               } else {
-                _log.info("Inserting CSS file '" + versionedURL + "' LINK element.", _log.fn());
+                _log.info("Inserting CSS file '" + versionedURL + "' LINK element.", fn);
                 return _includeCSS(versionedURL, includes);
               }
             }));
@@ -301,16 +310,16 @@
           // include dependency's JS file(s), unless global already exists or JS file is already included
           // does the global variable already exist?
           if ((d.obj !== undefined) && (_nestedProperty(root, d.obj) !== undefined)) {
-            _log.warn("global variable '" + d.obj + "' already exists! Will not include JS for this dependency.", _log.fn());
+            _log.warn("global variable '" + d.obj + "' already exists! Will not include JS for this dependency.", fn);
           } else if ((d.js !== undefined) && Array.isArray(d.js)) {
             promises.push(d.js.map(function (url) {
               var versionedURL = _versionedURL(url, d.vers);
               if (_includesJS(versionedURL)) {
-                _log.error("JS file '" + versionedURL + "' is already included! Will not include it for this dependency.", _log.fn());
+                _log.warn("JS file '" + versionedURL + "' is already included! Will not include it for this dependency.", fn);
               } else if ((d.mod !== undefined) && noJSModules) {
-                _log.info("JS file '" + versionedURL + "' is specified to be loaded as a module as opposed to a SCRIPT element. Skipping SCRIPT element creation.", _log.fn());
+                _log.info("JS file '" + versionedURL + "' is specified to be loaded as a module as opposed to a SCRIPT element. Skipping SCRIPT element creation.", fn);
               } else {
-                _log.info("inserting JS file '" + versionedURL + "' SCRIPT element.", _log.fn());
+                _log.info("inserting JS file '" + versionedURL + "' SCRIPT element.", fn);
                 return _includeJS(versionedURL, includes);
               }
             }));
@@ -318,32 +327,39 @@
         });
 
         // inject all dependencies' elements into HEAD at once, because performance/efficiency
+        var result;
         if (includes.children.length > 0) {
-          _log.info("inserting " + includes.children.length + " element(s) into document HEAD.", _log.fn());
+          _log.info("inserting " + includes.children.length + " element(s) into document HEAD.", fn);
           root.document.getElementsByTagName('head')[0].appendChild(includes);
-          return Promise.all(promises).then(function() {
-            _log.info("all injected CSS/JS files loaded successfully.", _log.fn());
+          result = Promise.all(promises).then(function() {
+            _log.info("all injected CSS/JS files loaded successfully.", fn);
           }, function (err) {
-            _log.error("one or more injected CSS/JS filed failed to load!", _log.fn());
+            _log.error("one or more injected CSS/JS files failed to load!", fn);
           });
         } else {
-          _log.warn("did not insert any elements into document HEAD.", _log.fn());
-          return Promise.resolve();
+          _log.warn("did not insert any elements into document HEAD.", fn);
+          result = Promise.resolve();
         }
+
+        _log.stopTimer(fn);
+        return result;
       }
 
       function _amdDependencies() {
+        var fn = _log.fn();
+        _log.startTimer(fn);
+
         var deps = [];
         var config = {paths: {}};
         var shims = {};
         _dependencies.forEach(function (d) {
           if ((d.mod !== undefined) && (d.js !== undefined) && Array.isArray(d.js)) {
-            _log.info("preparing dependency for '" + d.mod + "' module...", _log.fn());
+            _log.info("preparing dependency for '" + d.mod + "' module...", fn);
             deps.push(d.mod);
             config.paths[d.mod] = [];
             d.js.forEach(function (url) {
               var path = _pathForURL(_versionedURL(url, d.vers), 'js');
-              _log.info("adding '" + d.mod + "' module config path: '" + path + "'", _log.fn());
+              _log.info("adding '" + d.mod + "' module config path: '" + path + "'", fn);
               config.paths[d.mod].push(path);
             });
             if ((d.shim !== undefined) && (d.shim == true) && (d.obj !== undefined)) {
@@ -356,21 +372,31 @@
           config['shim'] = shims;
         }
         require.config(config);
+
+        _log.stopTimer(fn);
         return deps;
       }
 
       function _amdSetGlobals(args) {
+        var fn = _log.fn();
+        _log.startTimer(fn);
+
         var i = 0;
         _dependencies.forEach(function (d) {
           if ((d.mod !== undefined) && (d.js !== undefined) && Array.isArray(d.js) && (d.obj !== undefined) && (i < args.length)) {
-            _log.info("setting global variable '" + d.obj + "' for '" + d.mod + "' module...", _log.fn());
+            _log.info("setting global variable '" + d.obj + "' for '" + d.mod + "' module...", fn);
             root[d.obj] = args[i];
             i++;
           }
         });
+
+        _log.stopTimer(fn);
       }
 
       function _requireDependencies() {
+        var fn = _log.fn();
+        _log.startTimer(fn);
+
         _dependencies.forEach(function (d) {
           if ((d.mod !== undefined) && (d.js !== undefined) && Array.isArray(d.js)) {
             d.js.forEach(function (path) {
@@ -382,9 +408,14 @@
             });
           }
         });
+
+        _log.stopTimer(fn);
       }
 
       function _includeCSS(path, parent) {
+        var fn = _log.fn();
+        _log.startTimer(fn);
+
         var link = root.document.createElement('link');
         link.rel = "stylesheet";
         link.media = "screen";
@@ -393,13 +424,17 @@
 
         return new Promise(function (resolve, reject) {
           link.onload = function () {
-            _log.info("browser has completed loading injected CSS file '" + path + "'.", _log.fn());
+            _log.info("browser has completed loading injected CSS file '" + path + "'.", fn);
+            _log.stopTimer(fn);
             resolve();
           };
         });
       }
 
       function _includeJS(path, parent) {
+        var fn = _log.fn();
+        _log.startTimer(fn);
+
         var script = root.document.createElement('script');
         script.src = path;
         script.async = 1;
@@ -408,7 +443,8 @@
 
         return new Promise(function (resolve, reject) {
           script.onload = function () {
-            _log.info("browser has completed loading injected JS file '" + path + "'.", _log.fn());
+            _log.info("browser has completed loading injected JS file '" + path + "'.", fn);
+            _log.stopTimer(fn);
             resolve();
           };
         });
@@ -457,7 +493,7 @@
       _log.stopTimer(options.log_context);
     };
 
-    // Execute any queued calls to UMbed()
+    // Execute any queued calls to UMbed().
     if ((queued !== undefined) && Array.isArray(queued)) {
       while (queued.length > 0) {
         UMbed.apply(null, queued.pop());
