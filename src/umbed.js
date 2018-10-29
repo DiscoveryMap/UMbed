@@ -296,15 +296,15 @@
         _dependencies.forEach(function (d) {
           // include dependency's CSS file(s), unless already included
           if ((d.css !== undefined) && Array.isArray(d.css)) {
-            promises.push(d.css.map(function (url) {
+            d.css.forEach(function (url) {
               var versionedURL = _versionedURL(url, d.vers);
               if (_includesCSS(versionedURL)) {
                 _log.warn("CSS file '" + versionedURL + "' is already included! Will not include it for this dependency.", fn);
               } else {
                 _log.info("Inserting CSS file '" + versionedURL + "' LINK element.", fn);
-                return _includeCSS(versionedURL, includes);
+                promises.push(_includeCSS(versionedURL, includes));
               }
-            }));
+            });
           }
 
           // include dependency's JS file(s), unless global already exists or JS file is already included
@@ -312,7 +312,7 @@
           if ((d.obj !== undefined) && (_nestedProperty(root, d.obj) !== undefined)) {
             _log.warn("global variable '" + d.obj + "' already exists! Will not include JS for this dependency.", fn);
           } else if ((d.js !== undefined) && Array.isArray(d.js)) {
-            promises.push(d.js.map(function (url) {
+            d.js.forEach(function (url) {
               var versionedURL = _versionedURL(url, d.vers);
               if (_includesJS(versionedURL)) {
                 _log.warn("JS file '" + versionedURL + "' is already included! Will not include it for this dependency.", fn);
@@ -320,9 +320,9 @@
                 _log.info("JS file '" + versionedURL + "' is specified to be loaded as a module as opposed to a SCRIPT element. Skipping SCRIPT element creation.", fn);
               } else {
                 _log.info("inserting JS file '" + versionedURL + "' SCRIPT element.", fn);
-                return _includeJS(versionedURL, includes);
+                promises.push(_includeJS(versionedURL, includes));
               }
-            }));
+            });
           }
         });
 
