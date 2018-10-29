@@ -366,12 +366,12 @@
             });
             if ((d.shim !== undefined) && (d.shim == true) && (d.obj !== undefined)) {
               shims[d.mod] = {};
-              shims[d.mod]['exports'] = d.obj;
+              shims[d.mod].exports = d.obj;
             }
           }
         });
         if (Object.keys(shims).length > 0) {
-          config['shim'] = shims;
+          config.shim = shims;
         }
         require.config(config);
 
@@ -499,7 +499,7 @@
     if ((queued !== undefined) && Array.isArray(queued)) {
       while (queued.length > 0) {
         UMbed.apply(null, queued.pop());
-      };
+      }
     }
   }
 
