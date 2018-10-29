@@ -418,7 +418,7 @@
 
       function _includeCSS(path, parent) {
         var fn = _log.fn();
-        _log.startTimer(fn);
+        _log.startTimer(fn + "-" + path);
 
         var link = root.document.createElement('link');
         link.rel = "stylesheet";
@@ -429,7 +429,7 @@
         return new Promise(function (resolve, reject) {
           link.onload = function () {
             _log.info("browser has completed loading injected CSS file '" + path + "'.", fn);
-            _log.stopTimer(fn);
+            _log.stopTimer(fn + "-" + path);
             resolve();
           };
         });
@@ -437,7 +437,7 @@
 
       function _includeJS(path, parent) {
         var fn = _log.fn();
-        _log.startTimer(fn);
+        _log.startTimer(fn + "-" + path);
 
         var script = root.document.createElement('script');
         script.src = path;
@@ -448,7 +448,7 @@
         return new Promise(function (resolve, reject) {
           script.onload = function () {
             _log.info("browser has completed loading injected JS file '" + path + "'.", fn);
-            _log.stopTimer(fn);
+            _log.stopTimer(fn + "-" + path);
             resolve();
           };
         });
