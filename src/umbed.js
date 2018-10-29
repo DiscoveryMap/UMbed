@@ -333,15 +333,17 @@
           root.document.getElementsByTagName('head')[0].appendChild(includes);
           result = Promise.all(promises).then(function() {
             _log.info("all injected CSS/JS files loaded successfully.", fn);
+            _log.stopTimer(fn);
           }, function (err) {
             _log.error("one or more injected CSS/JS files failed to load!", fn);
+            _log.stopTimer(fn);
           });
         } else {
           _log.warn("did not insert any elements into document HEAD.", fn);
           result = Promise.resolve();
+          _log.stopTimer(fn);
         }
 
-        _log.stopTimer(fn);
         return result;
       }
 
