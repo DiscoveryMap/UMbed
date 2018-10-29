@@ -150,13 +150,13 @@
       };
 
       self.startTimer = function (label) {
-        if (self._level == 'debug') {
+        if (self._level == 'debug' && console.time && (typeof console.time === 'function')) {
           console.time(label);
         }
       };
 
       self.stopTimer = function (label) {
-        if (self._level == 'debug') {
+        if (self._level == 'debug' && console.timeEnd && (typeof console.timeEnd === 'function')) {
           console.timeEnd(label);
         }
       };
@@ -224,6 +224,7 @@
         // container_id is required
         if (!options.container_id) {
           _log.error("'requires a valid container_id! Unable to proceed.", fn);
+          _log.stopTimer(fn);
           return;
         }
 
@@ -231,6 +232,7 @@
         var embed = root.document.getElementById(options.container_id);
         if ((embed === undefined) || (embed === null)) {
           _log.error("couldn't find element to attach to! Unable to proceed.", fn);
+          _log.stopTimer(fn);
           return;
         }
 
