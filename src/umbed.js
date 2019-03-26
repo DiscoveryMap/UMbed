@@ -205,9 +205,7 @@
       // Browser globals
       } else {
         _includeDependencies().then(function () {
-          root.addEventListener("load", function(e) {
-            _inject(options);
-          });
+          _inject(options);
         });
       }
 
