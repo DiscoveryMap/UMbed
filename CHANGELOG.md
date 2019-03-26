@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.6] - 2019-03-26
+### Changed
+
+- Fix for `_inject()` potentially not being called in a browser globals environment
+  running Turbolinks.
+
 ## [0.0.5] - 2018-10-29
 ### Changed
 
@@ -60,7 +66,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial version of src/UMbed.js adapted from Discovery Map International's
   DMIWebMapEmbed.js (by permission)
 
-[Unreleased]: compare/0.0.5...HEAD
+[Unreleased]: compare/0.0.6...HEAD
+[0.0.6]: compare/0.0.5...0.0.6
 [0.0.5]: compare/0.0.4...0.0.5
 [0.0.4]: compare/0.0.3...0.0.4
 [0.0.3]: compare/0.0.2...0.0.3
